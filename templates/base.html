@@ -4,10 +4,14 @@
 <head>
     <title>Django Bookmarks | {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="/site_media/style.css" type="text/css" />
+    <script type="text/javascript" src="/site_media/jquery.js"></script>
+    {% block external %}{% endblock %}
 </head>
 <body>
     <div id="nav">
         <a href="/">Home</a> |
+        <a href="/tag/">Tags</a> |
+        <a href="/search/">Search</a> |
         {% if user.is_authenticated %}
             Welcome
             <a href="/user/{{ user.username }}/">{{ user.username }}</a> |
