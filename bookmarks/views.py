@@ -84,27 +84,32 @@ def _bookmark_save(request, form):
 
 @login_required
 def bookmark_save_page(request):
+    ajax = request.GET.has_key('ajax')
     if request.method == 'POST':
         form = BookmarkSaveForm(request.POST)
         if form.is_valid():
             bookmark = _bookmark_save(request, form)
-            return HttpResponseRedirect(
-                '/user/%s/' % request.user.username
-            )
+            if ajax:
+                variables = RequestContext(request, {
+                    'bookmarks': [bookmark],
+                    'show_edit': True,
+                    'show_tags': True,
+                })
+                return render_to_response('bookmark_list.html', variables)
+            else:
+                return HttpResponseRedirect('/user/%s/' % request.user.username)
+        else:
+            if ajax:
+                return HttpResponse('failure')
     elif request.GET.has_key('url'):
         url = request.GET['url']
         title = ''
         tags = ''
         try:
             link = Link.objects.get(url=url)
-            bookmark = Bookmark.objects.get(
-                link=link,
-                user=request.user
-            )
+            bookmark = Bookmark.objects.get(link=link, user=request.user)
             title = bookmark.title
-            tags = ' '.join(
-                tag.name for tag in bookmark.tag_set.all()
-            )
+            tags = ' '.join(tag.name for tag in bookmark.tag_set.all())
         except ObjectDoesNotExist:
             pass
         form = BookmarkSaveForm({
@@ -117,7 +122,10 @@ def bookmark_save_page(request):
     variables = RequestContext(request, {
         'form': form
     })
-    return render_to_response('bookmark_save.html', variables)
+    if ajax:
+        return render_to_response('bookmark_save_form.html', variables)
+    else:
+        return render_to_response('bookmark_save.html', variables)
 
 def tag_cloud_page(request):
     MAX_WEIGHT = 5
