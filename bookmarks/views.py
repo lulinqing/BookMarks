@@ -1,6 +1,5 @@
 # Create your views here.
-#from django.http import HttpResponse, Http404
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
@@ -13,7 +12,11 @@ from bookmarks.forms import *
 from bookmarks.models import *
 
 def main_page(request):
-    return render_to_response('main_page.html', RequestContext(request))
+    shared_bookmarks = SharedBookmark.objects.order_by('-date')[:10]
+    variables = RequestContext(request, {
+        'shared_bookmarks': shared_bookmarks
+    })
+    return render_to_response('main_page.html', variables)
 
 def user_page(request, username):
     user = get_object_or_404(User, username=username)
@@ -46,9 +49,9 @@ def register_page(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = User.objects.create_user(
-                username=form.cleaned_data['username'],
-                password=form.cleaned_data['password1'],
-                email=form.cleaned_data['email']
+                username = form.cleaned_data['username'],
+                password = form.cleaned_data['password1'],
+                email = form.cleaned_data['email']
             )
             return HttpResponseRedirect('/register/success/')
     else:
@@ -61,12 +64,12 @@ def register_page(request):
 def _bookmark_save(request, form):
     # Create or get link.
     link, dummy = Link.objects.get_or_create(
-        url=form.cleaned_data['url']
+        url = form.cleaned_data['url']
     )
     # Create or get bookmark.
     bookmark, created = Bookmark.objects.get_or_create(
-        user=request.user,
-        link=link
+        user = request.user,
+        link = link
     )
     # Update bookmark title.
     bookmark.title = form.cleaned_data['title']
@@ -78,6 +81,12 @@ def _bookmark_save(request, form):
     for tag_name in tag_names:
         tag, dummy = Tag.objects.get_or_create(name=tag_name)
         bookmark.tag_set.add(tag)
+    # Share on the main page if requested.
+    if form.cleaned_data['share']:
+        shared_bookmark, created = SharedBookmark.objects.get_or_create(bookmark=bookmark)
+        if created:
+            shared_bookmark.users_voted.add(request.user)
+            shared_bookmark.save()
     # Save bookmark to database.
     bookmark.save()
     return bookmark
@@ -115,7 +124,7 @@ def bookmark_save_page(request):
         form = BookmarkSaveForm({
             'url': url,
             'title': title,
-            'tags': tags
+            'tags': tags,
         })
     else:
         form = BookmarkSaveForm()
@@ -172,3 +181,51 @@ def search_page(request):
         return render_to_response('bookmark_list.html', variables)
     else:
         return render_to_response('search.html', variables)
+
+def ajax_tag_autocomplete(request):
+    if request.GET.has_key('q'):
+        tags = Tag.objects.filter(name__istartswith=request.GET['q'])[:5]
+        return HttpResponse('\n'.join(tag.name for tag in tags))
+    return HttpResponse()
+
+@login_required
+def bookmark_vote_page(request):
+    if request.GET.has_key('id'):
+        try:
+            id = request.GET['id']
+            shared_bookmark = SharedBookmark.objects.get(id=id)
+            user_voted = shared_bookmark.users_voted.filter(
+                username=request.user.username
+            )
+            if not user_voted:
+                shared_bookmark.votes += 1
+                shared_bookmark.users_voted.add(request.user)
+                shared_bookmark.save()
+        except ObjectDoesNotExist:
+            raise Http404('Bookmark not found.')
+    if request.META.has_key('HTTP_REFERER'):
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    return HttpResponseRedirect('/')
+
+def popular_page(request):
+#    from datetime import datetime, timedelta
+#    shared_bookmarks = SharedBookmark.objects.filter(
+#        date__gt = datetime.today() - timedelta(1)
+#    )
+#    shared_bookmarks = shared_bookmarks.order_by('-votes')[:10]
+    shared_bookmarks = SharedBookmark.objects.order_by('-votes')[:10]
+    variables = RequestContext(request, {
+        'shared_bookmarks': shared_bookmarks
+    })
+    return render_to_response('popular_page.html', variables)
+
+def bookmark_page(request, bookmark_id):
+    shared_bookmark = get_object_or_404(
+        SharedBookmark,
+        id = bookmark_id
+    )
+    variables = RequestContext(request, {
+        'shared_bookmark': shared_bookmark
+    })
+    return render_to_response('bookmark_page.html', variables)
+

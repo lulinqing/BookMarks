@@ -21,14 +21,14 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
 
-    # Browsing
     (r'^$', main_page),
     (r'^user/(\w+)/$', user_page),
     (r'^tag/([^\s]+)/$', tag_page),
     (r'^tag/$', tag_cloud_page),
     (r'^search/$', search_page),
+    (r'^popular/$', popular_page),
+    (r'^bookmark/(\d+)/$', bookmark_page),
 
-    # Session management
     (r'^login/$', 'django.contrib.auth.views.login'),
     (r'^accounts/login/$', 'django.contrib.auth.views.login'),
     (r'^logout/$', logout_page),
@@ -39,7 +39,8 @@ urlpatterns = patterns('',
     (r'^register/$', register_page),
     (r'^register/success/$', 'django.views.generic.simple.direct_to_template', { 'template': 'registration/register_success.html' }),
 
-    # Account management
     (r'^save/$', bookmark_save_page),
-
+    (r'^ajax/tag/autocomplete/$', ajax_tag_autocomplete),
+    (r'^vote/$', bookmark_vote_page),
+    (r'^comments/', include('django.contrib.comments.urls.comments')),
 )

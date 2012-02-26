@@ -9,9 +9,6 @@
 </head>
 <body>
     <div id="nav">
-        <a href="/">Home</a> |
-        <a href="/tag/">Tags</a> |
-        <a href="/search/">Search</a> |
         {% if user.is_authenticated %}
             Welcome
             <a href="/user/{{ user.username }}/">{{ user.username }}</a> |
@@ -22,6 +19,11 @@
             <a href="/login/">Login</a> |
             <a href="/register/">Register</a>
         {% endif %}
+        <br>
+        <a href="/">Home</a> |
+        <a href="/popular/">Top10</a> |
+        <a href="/tag/">Tags</a> |
+        <a href="/search/">Search</a>
     </div>
     <h1>{% block head %}{% endblock %}</h1>
     {% block content %}{% endblock %}
