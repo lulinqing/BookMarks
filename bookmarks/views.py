@@ -228,4 +228,3 @@ def bookmark_page(request, bookmark_id):
         'shared_bookmark': shared_bookmark
     })
     return render_to_response('bookmark_page.html', variables)
-

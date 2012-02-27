@@ -42,5 +42,5 @@ urlpatterns = patterns('',
     (r'^save/$', bookmark_save_page),
     (r'^ajax/tag/autocomplete/$', ajax_tag_autocomplete),
     (r'^vote/$', bookmark_vote_page),
-    (r'^comments/', include('django.contrib.comments.urls.comments')),
+    (r'^comments/', include('django.contrib.comments.urls')),
 )
